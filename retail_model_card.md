@@ -29,24 +29,23 @@ An agent-based model where consumers interact with a dynamic retail environment.
 
 ### Consumer Agents
 - **Initial Budget**: $50 - $200 (randomized).
-- **Price Sensitivity**: Learnable.
-- **Purchase Frequency**: Learnable.
+- **Price Sensitivity**: 0.5 - 1.5 Learnable.
+- **Purchase Frequency**: 2 - 5 purchases per week Learnable.
 
 ### Environment
-- **Stock Levels**: Initial stock per product (customizable).
-- **Restock Threshold**: Customizable.
-- **Promotion Duration**: Learnable.
+- **Stock Levels**: 100 - 500 units per product.
+- **Restock Threshold**: 20% of initial stock.
+- **Promotion Duration**: 7 - 14 days.
 
 ### Promotions
-- **Discount Rate**: Learnable.
-- **Type**: Configurable (e.g., BOGO, % off).
-- **Consumer Reach**: Learnable.
+- **Discount Rate**: 10% - 30%.
+- **Type**: Percentage off, BOGO.
+- **Consumer Reach**: 50% - 80% of agents.
 
 ### Stock Management
-- **Initial Inventory**: Customizable.
-- **Reorder Quantity**: Configurable.
-- **Lead Time**: Learnable.
-
+- **Initial Inventory**: 300 units per product.
+- **Reorder Quantity**: 100 - 300 units.
+- **Lead Time**: 5 - 10 days.
 
 ## Outputs
 - **Sales Data**: Products sold, volume, velocity.
