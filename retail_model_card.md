@@ -1,5 +1,5 @@
 
-Retail Promotion and Consumer Behavior Simulation
+## Retail Promotion and Consumer Behavior Simulation
 
 ## Overview
 Simulates consumer behavior, pricing, and inventory management to optimize retail strategies. Built using AgentTorch, this model provides insights into consumer-product interactions for enhancing sales and stock efficiency.
