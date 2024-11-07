@@ -21,11 +21,32 @@ An agent-based model where consumers interact with a dynamic retail environment.
 - **Aggregator**: Collects data for analysis.
 
 ## Substeps
-1. **Perception**: Agents observe prices, promotions, stock.
-2. **Decision**: Utility functions determine purchases.
-3. **Action**: Agents buy products, impacting stock.
-4. **Environment Update**: Adjusts stock, triggers reorders.
-5. **Aggregation**: Gathers data for metrics.
+1. **Purchase**: Agents gather information on prices, promotions, and stock, then use utility functions to assess and make purchase decisions.
+2. **Deliver**: Stock levels drop based on purchase decisions
+3. **Restock**: store environment updates stock, triggers reorders as necessary
+
+## Model Parameters
+
+### Consumer Agents
+- **Initial Budget**: $50 - $200 (randomized).
+- **Price Sensitivity**: Learnable.
+- **Purchase Frequency**: Learnable.
+
+### Environment
+- **Stock Levels**: Initial stock per product (customizable).
+- **Restock Threshold**: Customizable.
+- **Promotion Duration**: Learnable.
+
+### Promotions
+- **Discount Rate**: Learnable.
+- **Type**: Configurable (e.g., BOGO, % off).
+- **Consumer Reach**: Learnable.
+
+### Stock Management
+- **Initial Inventory**: Customizable.
+- **Reorder Quantity**: Configurable.
+- **Lead Time**: Learnable.
+
 
 ## Outputs
 - **Sales Data**: Products sold, volume, velocity.
