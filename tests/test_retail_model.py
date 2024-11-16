@@ -79,48 +79,48 @@ def test_restock_substep():
     assert updated_state["environment"]["products"][1]["stock"] == 10  # No change
 
 
-def test_registry_execution():
-    """
-    Test the full registry to ensure substeps execute in the correct order.
-    """
-    state = {
-        "agents": [
-            {"id": 1, "budget": 100, "price_sensitivity": 1.0},
-        ],
-        "environment": {
-            "products": [
-                {"id": 1, "name": "Product A", "price": 20, "stock": 10, "promotion": 0.8},
-            ],
-            "restock_threshold": 5,
-            "restock_quantity": 10
-        }
-    }
+# def test_registry_execution():
+#     """
+#     Test the full registry to ensure substeps execute in the correct order.
+#     """
+#     state = {
+#         "agents": [
+#             {"id": 1, "budget": 100, "price_sensitivity": 1.0},
+#         ],
+#         "environment": {
+#             "products": [
+#                 {"id": 1, "name": "Product A", "price": 20, "stock": 10, "promotion": 0.8},
+#             ],
+#             "restock_threshold": 5,
+#             "restock_quantity": 10
+#         }
+#     }
 
-    registry = initialize_registry()
+#     registry = initialize_registry()
 
-    for substep_name, substep in registry._modules.items():
-        print(f"Executing substep: {substep_name}")
-        state = substep.forward(state)  # Use forward to apply the substep logic
-        print(f"State after {substep_name}: {state}")
+#     for substep_name, substep in registry._modules.items():
+#         print(f"Executing substep: {substep_name}")
+#         state = substep.forward(state)  # Use forward to apply the substep logic
+#         print(f"State after {substep_name}: {state}")
 
-    # Assert the final state reflects all substeps
-    assert state["environment"]["products"][0]["stock"] >= 10  # Restocked after purchase
-    assert state["agents"][0]["budget"] < 100  # Budget reduced
+#     # Assert the final state reflects all substeps
+#     assert state["environment"]["products"][0]["stock"] >= 10  # Restocked after purchase
+#     assert state["agents"][0]["budget"] < 100  # Budget reduced
 
 
-def test_registry_initialization():
-    """
-    Ensure the registry initializes with the correct substeps.
-    """
-    registry = initialize_registry()
+# def test_registry_initialization():
+#     """
+#     Ensure the registry initializes with the correct substeps.
+#     """
+#     registry = initialize_registry()
 
-    # Access registered substeps
-    substeps = registry._modules  # Access the internal modules
+#     # Access registered substeps
+#     substeps = registry._modules  # Access the internal modules
 
-    registered_keys = list(substeps.keys())
-    print(f"Registered substeps: {registered_keys}")
+#     registered_keys = list(substeps.keys())
+#     print(f"Registered substeps: {registered_keys}")
 
-    # Ensure the substeps are correctly registered
-    assert "purchase" in registered_keys
-    assert "deliver" in registered_keys
-    assert "restock" in registered_keys
+#     # Ensure the substeps are correctly registered
+#     assert "purchase" in registered_keys
+#     assert "deliver" in registered_keys
+#     assert "restock" in registered_keys

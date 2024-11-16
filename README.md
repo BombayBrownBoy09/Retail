@@ -55,26 +55,27 @@ simulation:
   steps: 10
 
 environment:
-  restock_threshold: 20
-  restock_quantity: 100
+  restock:
+    threshold: 20
+    quantity: 100
 
 promotions:
-  - id: 1
+  - product_id: 1
     discount: 0.2
     duration: 7
-  - id: 2
+  - product_id: 2
     discount: 0.1
     duration: 14
 
 consumers:
   count: 50
-  budget_range:
+  budget:
     min: 50
     max: 200
-  price_sensitivity_range:
+  price_sensitivity:
     min: 0.5
     max: 1.5
-  purchase_frequency_range:
+  purchase_frequency:
     min: 2
     max: 5
 ```
