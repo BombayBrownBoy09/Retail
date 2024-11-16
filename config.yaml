@@ -1,26 +1,30 @@
+# Simulation Configuration
 simulation:
-  steps: 10
+  steps: 10  # Number of steps to run the simulation
 
+# Environment Configuration
 environment:
-  restock_threshold: 20
-  restock_quantity: 100
+  restock_threshold: 20  # Minimum stock before restocking
+  restock_quantity: 100  # Units to restock
 
+# Promotions Configuration
 promotions:
-  - id: 1
-    discount: 0.2
-    duration: 7
+  - id: 1          # Product ID for the promotion
+    discount: 0.2  # Discount rate (20%)
+    duration: 7    # Duration of the promotion in steps
   - id: 2
-    discount: 0.1
+    discount: 0.1  # Discount rate (10%)
     duration: 14
 
+# Consumers Configuration
 consumers:
-  count: 50
+  count: 50  # Number of consumers in the simulation
   budget_range:
-    min: 50
-    max: 200
+    min: 50   # Minimum initial budget
+    max: 200  # Maximum initial budget
   price_sensitivity_range:
-    min: 0.5
-    max: 1.5
+    min: 0.5  # Minimum price sensitivity
+    max: 1.5  # Maximum price sensitivity
   purchase_frequency_range:
-    min: 2
-    max: 5
+    min: 2  # Minimum purchases per week
+    max: 5  # Maximum purchases per week

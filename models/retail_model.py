@@ -1,56 +1,68 @@
-from agent_torch import Agent, Environment, Simulation
+from agent_torch.substep import SubstepObservation, SubstepAction, SubstepTransition
+from agent_torch import Registry
 import numpy as np
 
-class ConsumerAgent(Agent):
-    def __init__(self, budget, price_sensitivity):
-        super().__init__()
-        self.budget = budget
-        self.price_sensitivity = price_sensitivity
 
-    def observe(self, env_state):
-        # Observe product prices, promotions, and stock levels
-        return env_state['products']
-
-    def act(self, observations):
-        # Decide purchases based on utility functions
+class Purchase(SubstepAction):
+    """
+    Substep for consumers making purchases based on environment observations.
+    """
+    def execute(self, state):
+        agents = state['agents']
+        products = state['environment']['products']
         purchases = []
-        for product in observations:
-            adjusted_price = product['price'] * product.get('promotion', 1)
-            if adjusted_price <= self.budget:
-                purchases.append(product)
-                self.budget -= adjusted_price
-        return purchases
+
+        for agent in agents:
+            chosen_products = []
+            for product in products:
+                promotion = product.get('promotion', 1)
+                adjusted_price = product['price'] * promotion
+                if adjusted_price <= agent['budget']:
+                    chosen_products.append(product)
+                    agent['budget'] -= adjusted_price
+            purchases.append(chosen_products)
+        state['actions'] = purchases
+        return state
 
 
-class RetailEnvironment(Environment):
-    def __init__(self, products, restock_threshold, restock_quantity):
-        super().__init__()
-        self.products = products
-        self.restock_threshold = restock_threshold
-        self.restock_quantity = restock_quantity
+class Deliver(SubstepTransition):
+    """
+    Substep for updating the environment after purchases.
+    """
+    def execute(self, state):
+        products = state['environment']['products']
+        actions = state.get('actions', [])
 
-    def update(self, actions):
-        # Update stock levels based on purchases
-        for action in actions:
-            for product in action:
-                self.products[product['id']]['stock'] -= 1
-                if self.products[product['id']]['stock'] < self.restock_threshold:
-                    self.products[product['id']]['stock'] += self.restock_quantity
+        for purchase in actions:
+            for product in purchase:
+                product_id = product['id']
+                for prod in products:
+                    if prod['id'] == product_id:
+                        prod['stock'] -= 1
+        return state
 
-    def state(self):
-        return {'products': self.products}
 
-class RetailSimulation(Simulation):
-    def __init__(self, agents, environment):
-        super().__init__(agents, environment)
+class Restock(SubstepObservation):
+    """
+    Substep for restocking products below the threshold.
+    """
+    def execute(self, state):
+        products = state['environment']['products']
+        restock_threshold = state['environment']['restock_threshold']
+        restock_quantity = state['environment']['restock_quantity']
 
-    def substep_purchase(self):
-        # Each agent decides their purchases
-        for agent in self.agents:
-            observations = agent.observe(self.environment.state())
-            actions = agent.act(observations)
-            self.environment.update(actions)
+        for product in products:
+            if product['stock'] < restock_threshold:
+                product['stock'] += restock_quantity
+        return state
 
-    def substep_restock(self):
-        # Restock the environment if needed
-        self.environment.update([])  # No actions needed for restocking
+
+def initialize_registry():
+    """
+    Initializes and registers the substeps for the simulation.
+    """
+    registry = Registry()
+    registry.register_substep(Purchase())
+    registry.register_substep(Deliver())
+    registry.register_substep(Restock())
+    return registry
