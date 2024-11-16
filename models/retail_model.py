@@ -1,12 +1,16 @@
 from agent_torch.core.substep import SubstepObservation, SubstepAction, SubstepTransition
 from agent_torch.core.registry import Registry
-import numpy as np
+
 
 class Purchase(SubstepAction):
-    """
-    Substep for consumers making purchases based on environment observations.
-    """
-    def execute(self, state):
+    def __init__(self, config=None, input_variables=None, output_variables=None, arguments=None):
+        config = config or {"simulation_metadata": {"calibration": False}}
+        input_variables = input_variables or ["agents", "environment"]
+        output_variables = output_variables or ["actions"]
+        arguments = arguments or {"learnable": {}, "fixed": {}}
+        super().__init__(config, input_variables, output_variables, arguments)
+
+    def forward(self, state):
         agents = state['agents']
         products = state['environment']['products']
         purchases = []
@@ -25,10 +29,14 @@ class Purchase(SubstepAction):
 
 
 class Deliver(SubstepTransition):
-    """
-    Substep for updating the environment after purchases.
-    """
-    def execute(self, state):
+    def __init__(self, config=None, input_variables=None, output_variables=None, arguments=None):
+        config = config or {"simulation_metadata": {"calibration": False}}
+        input_variables = input_variables or ["environment", "actions"]
+        output_variables = output_variables or ["environment"]
+        arguments = arguments or {"learnable": {}, "fixed": {}}
+        super().__init__(config, input_variables, output_variables, arguments)
+
+    def forward(self, state):
         products = state['environment']['products']
         actions = state.get('actions', [])
 
@@ -42,10 +50,14 @@ class Deliver(SubstepTransition):
 
 
 class Restock(SubstepObservation):
-    """
-    Substep for restocking products below the threshold.
-    """
-    def execute(self, state):
+    def __init__(self, config=None, input_variables=None, output_variables=None, arguments=None):
+        config = config or {"simulation_metadata": {"calibration": False}}
+        input_variables = input_variables or ["environment"]
+        output_variables = output_variables or ["environment"]
+        arguments = arguments or {"learnable": {}, "fixed": {}}
+        super().__init__(config, input_variables, output_variables, arguments)
+
+    def forward(self, state):
         products = state['environment']['products']
         restock_threshold = state['environment']['restock_threshold']
         restock_quantity = state['environment']['restock_quantity']
@@ -61,7 +73,26 @@ def initialize_registry():
     Initializes and registers the substeps for the simulation.
     """
     registry = Registry()
-    registry.register_substep(Purchase(), "purchase", "policy")
-    registry.register_substep(Deliver(), "deliver", "transition")
-    registry.register_substep(Restock(), "restock", "observation")
+    registry.register_substep(
+        Purchase(config={"simulation_metadata": {"calibration": False}},
+                 input_variables=["agents", "environment"],
+                 output_variables=["actions"]),
+        "purchase",  # Key as a positional argument
+    )
+    registry.register_substep(
+        Deliver(config={"simulation_metadata": {"calibration": False}},
+                input_variables=["environment", "actions"],
+                output_variables=["environment"]),
+        "deliver",  # Key as a positional argument
+    )
+    registry.register_substep(
+        Restock(config={"simulation_metadata": {"calibration": False}},
+                input_variables=["environment"],
+                output_variables=["environment"]),
+        "restock",  # Key as a positional argument
+    )
     return registry
+
+
+
+

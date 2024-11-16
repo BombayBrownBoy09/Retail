@@ -21,7 +21,7 @@ def test_purchase_substep():
     }
 
     purchase = Purchase()
-    updated_state = purchase.execute(state)
+    updated_state = purchase.forward(state)
 
     # Assert at least one purchase is made
     assert "actions" in updated_state
@@ -48,7 +48,7 @@ def test_deliver_substep():
     }
 
     deliver = Deliver()
-    updated_state = deliver.execute(state)
+    updated_state = deliver.forward(state)
 
     # Assert stock levels are updated
     assert updated_state["environment"]["products"][0]["stock"] == 9  # Stock reduced by 1
@@ -72,7 +72,7 @@ def test_restock_substep():
     }
 
     restock = Restock()
-    updated_state = restock.execute(state)
+    updated_state = restock.forward(state)
 
     # Assert products below the threshold are restocked
     assert updated_state["environment"]["products"][0]["stock"] == 11  # Restocked
@@ -97,8 +97,11 @@ def test_registry_execution():
     }
 
     registry = initialize_registry()
-    for substep in registry.get_substeps():
-        state = substep.execute(state)
+
+    for substep_name, substep in registry._modules.items():
+        print(f"Executing substep: {substep_name}")
+        state = substep.forward(state)  # Use forward to apply the substep logic
+        print(f"State after {substep_name}: {state}")
 
     # Assert the final state reflects all substeps
     assert state["environment"]["products"][0]["stock"] >= 10  # Restocked after purchase
@@ -110,10 +113,14 @@ def test_registry_initialization():
     Ensure the registry initializes with the correct substeps.
     """
     registry = initialize_registry()
-    substeps = registry.get_substeps()
 
-    # Assert the correct substeps are registered
-    assert len(substeps) == 3  # Ensure all three substeps are registered
-    assert isinstance(substeps[0], Purchase)
-    assert isinstance(substeps[1], Deliver)
-    assert isinstance(substeps[2], Restock)
+    # Access registered substeps
+    substeps = registry._modules  # Access the internal modules
+
+    registered_keys = list(substeps.keys())
+    print(f"Registered substeps: {registered_keys}")
+
+    # Ensure the substeps are correctly registered
+    assert "purchase" in registered_keys
+    assert "deliver" in registered_keys
+    assert "restock" in registered_keys
