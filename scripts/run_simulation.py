@@ -17,12 +17,8 @@ def initialize_simulation(config):
     """
     Initialize the simulation state with consumers and environment.
     """
-    # Define products
-    products = [
-        {"id": 1, "name": "Product A", "price": 20, "stock": 100},
-        {"id": 2, "name": "Product B", "price": 15, "stock": 150},
-        {"id": 3, "name": "Product C", "price": 10, "stock": 200},
-    ]
+    # Define products from the config file
+    products = config['environment']['products']
 
     # Define agents
     agents = [
@@ -66,7 +62,7 @@ if __name__ == "__main__":
     config_data = load_config()
 
     # Initialize registry and configuration
-    registry = initialize_registry()
+    registry, substeps = initialize_registry()
     config = Config(config_data)
 
     # Initialize the runner
@@ -76,5 +72,10 @@ if __name__ == "__main__":
     state = initialize_simulation(config_data)
     runner.init(state)
 
-    # Run the simulation
-    runner.step()
+    # Run the simulation for the configured number of steps
+    num_steps = config_data['simulation']['steps']
+    for step in range(num_steps):
+        print(f"Running step {step + 1}")
+        runner.step()
+
+    print("Simulation is complete.")
