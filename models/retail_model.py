@@ -18,12 +18,13 @@ class Purchase(SubstepAction):
         for agent in agents:
             chosen_products = []
             for product in products:
-                promotion = product.get('promotion', 1)
+                promotion = product.get('promotion', 1.0)  # Default to no promotion
                 adjusted_price = product['price'] * promotion
                 if adjusted_price <= agent['budget']:
                     chosen_products.append(product)
                     agent['budget'] -= adjusted_price
             purchases.append(chosen_products)
+
         state['actions'] = purchases
         return state
 
@@ -45,7 +46,9 @@ class Deliver(SubstepTransition):
                 product_id = product['id']
                 for prod in products:
                     if prod['id'] == product_id:
+                        print(f"Delivering product {product_id}: stock before={prod['stock']}")
                         prod['stock'] -= 1
+                        print(f"Delivering product {product_id}: stock after={prod['stock']}")
         return state
 
 
@@ -62,10 +65,20 @@ class Restock(SubstepObservation):
         restock_threshold = state['environment']['restock_threshold']
         restock_quantity = state['environment']['restock_quantity']
 
-        for product in products:
+        for i, product in enumerate(products):
+            print(f"[Restock] Before: Product {product['id']} - Stock: {product['stock']}")
             if product['stock'] < restock_threshold:
-                product['stock'] += restock_quantity
+                state['environment']['products'][i]['stock'] += restock_quantity
+                print(f"[Restock] After: Product {product['id']} - Restocked to: {state['environment']['products'][i]['stock']}")
+
+        # Explicitly update the environment to ensure persistence
+        state['environment']['products'] = products
+        print(f"[Restock] Final State: {state['environment']['products']}")
         return state
+
+
+
+
 
 
 def initialize_registry():
@@ -73,26 +86,18 @@ def initialize_registry():
     Initializes and registers the substeps for the simulation.
     """
     registry = Registry()
-    registry.register_substep(
-        Purchase(config={"simulation_metadata": {"calibration": False}},
-                 input_variables=["agents", "environment"],
-                 output_variables=["actions"]),
-        "purchase",  # Key as a positional argument
-    )
-    registry.register_substep(
-        Deliver(config={"simulation_metadata": {"calibration": False}},
-                input_variables=["environment", "actions"],
-                output_variables=["environment"]),
-        "deliver",  # Key as a positional argument
-    )
-    registry.register_substep(
-        Restock(config={"simulation_metadata": {"calibration": False}},
-                input_variables=["environment"],
-                output_variables=["environment"]),
-        "restock",  # Key as a positional argument
-    )
-    return registry
 
+    purchase = Purchase()
+    deliver = Deliver()
+    restock = Restock()
 
+    # Register metadata instead of objects
+    registry.register("Purchase Substep", "purchase", "policy")
+    registry.register("Deliver Substep", "deliver", "transition")
+    registry.register("Restock Substep", "restock", "observation")
 
+    print("Registry contents after initialization:")
+    print(registry.view())  # Prints JSON-serializable output
 
+    # Return both the registry and the actual substep objects for test execution
+    return registry, {"purchase": purchase, "deliver": deliver, "restock": restock}
