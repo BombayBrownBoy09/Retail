@@ -77,10 +77,6 @@ class Restock(SubstepObservation):
         return state
 
 
-
-
-
-
 def initialize_registry():
     """
     Initializes and registers the substeps for the simulation.

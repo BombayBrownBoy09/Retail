@@ -36,7 +36,7 @@ def test_registry_execution():
         ],
         "environment": {
             "products": [
-                {"id": 1, "name": "Product A", "price": 20, "stock": 10, "promotion": 0.8},
+                {"id": 1, "name": "Product A", "price": 20, "stock": 4, "promotion": 0.8},  # Stock below threshold
             ],
             "restock_threshold": 5,
             "restock_quantity": 10
@@ -68,6 +68,7 @@ def test_registry_execution():
     # Assertions
     assert state["environment"]["products"][0]["stock"] >= 10  # Stock updated
     assert state["agents"][0]["budget"] < 120  # Budget reduced
+
 
 
 
