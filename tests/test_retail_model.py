@@ -1,8 +1,7 @@
-import sys
-import os
+import pytest
 import numpy as np
 from models.retail_model import initialize_registry, Purchase, Deliver, Restock
-
+from agent_torch.core.registry import Registry
 
 def test_purchase_substep():
     """
@@ -104,3 +103,17 @@ def test_registry_execution():
     # Assert the final state reflects all substeps
     assert state["environment"]["products"][0]["stock"] >= 10  # Restocked after purchase
     assert state["agents"][0]["budget"] < 100  # Budget reduced
+
+
+def test_registry_initialization():
+    """
+    Ensure the registry initializes with the correct substeps.
+    """
+    registry = initialize_registry()
+    substeps = registry.get_substeps()
+
+    # Assert the correct substeps are registered
+    assert len(substeps) == 3  # Ensure all three substeps are registered
+    assert isinstance(substeps[0], Purchase)
+    assert isinstance(substeps[1], Deliver)
+    assert isinstance(substeps[2], Restock)

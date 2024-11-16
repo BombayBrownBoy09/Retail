@@ -1,7 +1,6 @@
-from agent_torch.substep import SubstepObservation, SubstepAction, SubstepTransition
-from agent_torch import Registry
+from agent_torch.core.substep import SubstepObservation, SubstepAction, SubstepTransition
+from agent_torch.core.registry import Registry
 import numpy as np
-
 
 class Purchase(SubstepAction):
     """
@@ -62,7 +61,7 @@ def initialize_registry():
     Initializes and registers the substeps for the simulation.
     """
     registry = Registry()
-    registry.register_substep(Purchase())
-    registry.register_substep(Deliver())
-    registry.register_substep(Restock())
+    registry.register_substep(Purchase(), "purchase", "policy")
+    registry.register_substep(Deliver(), "deliver", "transition")
+    registry.register_substep(Restock(), "restock", "observation")
     return registry

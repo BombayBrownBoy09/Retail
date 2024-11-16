@@ -1,6 +1,8 @@
 from models.retail_model import initialize_registry
-from agent_torch import Runner
+from agent_torch.core.runner import Runner
+from agent_torch.core.config import Config
 import yaml
+import numpy as np
 
 
 def load_config():
@@ -61,12 +63,18 @@ def initialize_simulation(config):
 
 if __name__ == "__main__":
     # Load configuration
-    config = load_config()
+    config_data = load_config()
 
-    # Initialize the registry and state
+    # Initialize registry and configuration
     registry = initialize_registry()
-    state = initialize_simulation(config)
+    config = Config(config_data)
 
-    # Initialize and run the simulation
-    runner = Runner(state=state, registry=registry, steps=config['simulation']['steps'])
-    runner.run()
+    # Initialize the runner
+    runner = Runner(config=config, registry=registry)
+
+    # Set the initial state
+    state = initialize_simulation(config_data)
+    runner.init(state)
+
+    # Run the simulation
+    runner.step()
