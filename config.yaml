@@ -6,6 +6,19 @@ simulation:
 environment:
   restock_threshold: 20  # Minimum stock before restocking
   restock_quantity: 100  # Units to restock
+  products:
+    - id: 1
+      name: "Product A"
+      price: 20
+      stock: 100
+    - id: 2
+      name: "Product B"
+      price: 15
+      stock: 150
+    - id: 3
+      name: "Product C"
+      price: 10
+      stock: 200
 
 # Promotions Configuration
 promotions:
@@ -28,3 +41,14 @@ consumers:
   purchase_frequency_range:
     min: 2  # Minimum purchases per week
     max: 5  # Maximum purchases per week
+
+# Substep Definitions
+substeps:
+  - observation: restock
+  - policy: purchase
+  - transition: deliver
+
+# Simulation Metadata (Optional)
+simulation_metadata:
+  num_steps_per_episode: 10
+  num_episodes: 1
