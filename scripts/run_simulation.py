@@ -1,81 +1,65 @@
+import argparse
+from tqdm import trange
+from agent_torch.core import Runner
+from agent_torch.core.helpers import read_config
 from models.retail_model import initialize_registry
-from agent_torch.core.runner import Runner
-from agent_torch.core.config import Config
-import yaml
-import numpy as np
 
+print(":: execution started")
 
-def load_config():
-    """
-    Load configuration from config.yaml.
-    """
-    with open("config.yaml", "r") as f:
-        return yaml.safe_load(f)
+# Parse command-line arguments
+parser = argparse.ArgumentParser()
+parser.add_argument("-c", "--config", help="Path to YAML config file", required=True)
+config_file = parser.parse_args().config
 
+# Load configuration
+config = read_config(config_file)
 
-def initialize_simulation(config):
-    """
-    Initialize the simulation state with consumers and environment.
-    """
-    # Define products from the config file
-    products = config['environment']['products']
-
-    # Define agents
-    agents = [
-        {
-            "id": i,
-            "budget": np.random.uniform(
-                config['consumers']['budget_range']['min'],
-                config['consumers']['budget_range']['max']
-            ),
-            "price_sensitivity": np.random.uniform(
-                config['consumers']['price_sensitivity_range']['min'],
-                config['consumers']['price_sensitivity_range']['max']
-            ),
-            "purchase_frequency": np.random.randint(
-                config['consumers']['purchase_frequency_range']['min'],
-                config['consumers']['purchase_frequency_range']['max']
-            )
+# Dynamic conversion of environment properties to ensure compatibility
+environment = config["environment"]
+for key, value in environment.items():
+    if isinstance(value, list):  # Convert lists to dictionaries with name, value, learnable
+        config["environment"][key] = {
+            "name": key,
+            "value": value,
+            "learnable": False,
         }
-        for i in range(config['consumers']['count'])
-    ]
+    elif not isinstance(value, dict):  # Wrap scalar values in a dictionary
+        config["environment"][key] = {
+            "name": key,
+            "value": value,
+            "learnable": False,
+        }
 
-    # Define environment
-    environment = {
-        "products": products,
-        "restock_threshold": config['environment']['restock_threshold'],
-        "restock_quantity": config['environment']['restock_quantity'],
-    }
+# Optional: Debugging output to verify conversion
+print(":: Converted environment configuration:")
+for key, value in config["environment"].items():
+    print(f"{key}: {value}")
 
-    # Add promotions to products
-    for promo in config['promotions']:
-        for product in products:
-            if product['id'] == promo['id']:
-                product['promotion'] = 1 - promo['discount']
+# Access simulation metadata
+simulation_metadata = config["simulation_metadata"]
+num_episodes = simulation_metadata["num_episodes"]
+num_steps_per_episode = simulation_metadata["num_steps_per_episode"]
 
-    # Return the initial state
-    return {"agents": agents, "environment": environment}
+# Initialize registry and substeps
+registry, substeps = initialize_registry()
 
+# Optional: Debugging output
+print(":: Substeps returned by initialize_registry:")
+print(substeps)
 
-if __name__ == "__main__":
-    # Load configuration
-    config_data = load_config()
+# Initialize the runner
+runner = Runner(config, registry)
+runner.init()
 
-    # Initialize registry and configuration
-    registry, substeps = initialize_registry()
-    config = Config(config_data)
+print(":: preparing simulation...")
 
-    # Initialize the runner
-    runner = Runner(config=config, registry=registry)
+# Run the simulation
+for episode in range(num_episodes):
+    runner.reset()
+    print(f":: starting episode {episode + 1}")
 
-    # Set the initial state
-    state = initialize_simulation(config_data)
-    runner.init(state)
+    for step in trange(num_steps_per_episode, desc=f":: running simulation {episode + 1}"):
+        runner.step(1)  # Advance the simulation by 1 step
 
-    # Run the simulation for the configured number of steps
-    num_steps = config_data['simulation']['steps']
-    for step in range(num_steps):
-        print(f"Running step {step + 1}")
-        runner.step()
+print(":: execution completed")
 
-    print("Simulation is complete.")

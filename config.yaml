@@ -2,53 +2,87 @@
 simulation:
   steps: 10  # Number of steps to run the simulation
 
+# Simulation Metadata
+simulation_metadata:
+  num_steps_per_episode: 10
+  num_episodes: 1
+  num_substeps_per_step: 3  # Number of substeps in each simulation step
+  device: "cpu"  # Specify the device: "cpu" or "cuda" for GPU
+  visualize: False  # Optional: Include if the simulation has a visualization step
+
 # Environment Configuration
 environment:
-  restock_threshold: 20  # Minimum stock before restocking
-  restock_quantity: 100  # Units to restock
+  restock_threshold:
+    name: "restock_threshold"
+    value: 20
+    learnable: False
+  restock_quantity:
+    name: "restock_quantity"
+    value: 100
+    learnable: False
   products:
-    - id: 1
-      name: "Product A"
-      price: 20
-      stock: 100
-    - id: 2
-      name: "Product B"
-      price: 15
-      stock: 150
-    - id: 3
-      name: "Product C"
-      price: 10
-      stock: 200
+    name: "products"
+    value:  # List of products defined within the "value" key
+      - id: 1
+        name: "Product A"
+        price: 20
+        stock: 100
+        learnable: False
+      - id: 2
+        name: "Product B"
+        price: 15
+        stock: 150
+        learnable: False
+      - id: 3
+        name: "Product C"
+        price: 10
+        stock: 200
+        learnable: False
 
 # Promotions Configuration
 promotions:
-  - id: 1          # Product ID for the promotion
-    discount: 0.2  # Discount rate (20%)
-    duration: 7    # Duration of the promotion in steps
+  - id: 1
+    discount: 0.2
+    duration: 7
   - id: 2
-    discount: 0.1  # Discount rate (10%)
+    discount: 0.1
     duration: 14
 
 # Consumers Configuration
 consumers:
-  count: 50  # Number of consumers in the simulation
+  count: 50
   budget_range:
-    min: 50   # Minimum initial budget
-    max: 200  # Maximum initial budget
+    name: "budget_range"
+    min: 50
+    max: 200
+    learnable: False
   price_sensitivity_range:
-    min: 0.5  # Minimum price sensitivity
-    max: 1.5  # Maximum price sensitivity
+    name: "price_sensitivity_range"
+    min: 0.5
+    max: 1.5
+    learnable: True
   purchase_frequency_range:
-    min: 2  # Minimum purchases per week
-    max: 5  # Maximum purchases per week
+    name: "purchase_frequency_range"
+    min: 2
+    max: 5
+    learnable: True
 
 # Substep Definitions
 substeps:
-  - observation: restock
-  - policy: purchase
-  - transition: deliver
+  restock: observation
+  purchase: policy
+  deliver: transition
 
-# Simulation Metadata (Optional)
-simulation_metadata:
-  num_steps_per_episode: 10
-  num_episodes: 1
+# State Configuration
+state:
+  agents:
+    consumer: 50
+  environment:
+    products:
+      - id: 1
+        stock: 100
+      - id: 2
+        stock: 150
+      - id: 3
+        stock: 200
+  time_step: 0
