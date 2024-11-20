@@ -11,23 +11,29 @@ simulation_metadata:
 
 state:
   environment:
-    restock_threshold: 20  # Minimum stock before restocking
-    restock_quantity: 100  # Units to restock
+    restock_threshold:
+      name: "Restock Threshold"
+      value: 20  # Minimum stock before restocking
+    restock_quantity:
+      name: "Restock Quantity"
+      value: 100  # Units to restock
     products:
-      - id: 1
-        name: "Product A"
-        price: 20
-        stock: 10  # Reduced to trigger restocking
-      - id: 2
-        name: "Product B"
-        price: 15
-        stock: 5   # Reduced to trigger restocking
-      - id: 3
-        name: "Product C"
-        price: 10
-        stock: 50
+      name: "Products"
+      value:
+        - id: 1
+          name: "Product A"
+          price: 20
+          stock: 10  # Reduced to trigger restocking
+        - id: 2
+          name: "Product B"
+          price: 15
+          stock: 5   # Reduced to trigger restocking
+        - id: 3
+          name: "Product C"
+          price: 10
+          stock: 50
     last_order_id:
-      name: 'Last Created Order'
+      name: "Last Created Order"
       value: -1
 
   agents:
@@ -37,7 +43,7 @@ state:
         id:
           name: "Consumer ID"
           initialization_function:
-            generator: 'generate_ids'
+            generator: "generate_ids"
             arguments:
               shape:
                 - 50
@@ -45,17 +51,25 @@ state:
         budget:
           name: "Budget"
           initialization_function:
-            generator: 'random_float'
+            generator: "random_float"
             arguments:
-              lower_limit: 50
-              upper_limit: 200
+              lower_limit:
+                name: "Lower Limit"
+                value: 50
+              upper_limit:
+                name: "Upper Limit"
+                value: 200
         price_sensitivity:
           name: "Price Sensitivity"
           initialization_function:
-            generator: 'random_float'
+            generator: "random_float"
             arguments:
-              lower_limit: 0.5
-              upper_limit: 1.5
+              lower_limit:
+                name: "Lower Limit"
+                value: 0.5
+              upper_limit:
+                name: "Upper Limit"
+                value: 1.5
 
 # Substep Definitions
 substeps:

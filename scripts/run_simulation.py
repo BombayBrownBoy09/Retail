@@ -122,9 +122,11 @@ def load_config(config_path):
         }
         # Add promotions to state
         for promo in config["promotions"]:
-            for product in config["state"]["environment"]["products"]:  # Correct access path
+            # Access the "value" key to retrieve the list of products
+            for product in config["state"]["environment"]["products"]["value"]:
                 if product["id"] == promo["id"]:
                     product["promotion"] = 1 - promo["discount"]
+
 
         # Add initial state to config
         config["initial_state"] = initial_state
