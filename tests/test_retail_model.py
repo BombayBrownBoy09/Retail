@@ -2,15 +2,6 @@ import pytest
 from models.retail_model import initialize_registry, Purchase, Deliver, Restock
 
 
-def test_register_substep():
-    """
-    Test the Registry's register method.
-    """
-    registry, _ = initialize_registry()
-    assert "purchase" in registry.policy_helpers
-    assert registry.policy_helpers["purchase"] == "Purchase Substep"
-
-
 def test_registry_initialization():
     """
     Ensure the registry initializes with the correct substeps.

@@ -12,66 +12,53 @@ simulation_metadata:
 
 # Environment Configuration
 environment:
-  restock_threshold:
-    name: "restock_threshold"
-    value: 20
-    learnable: False
-  restock_quantity:
-    name: "restock_quantity"
-    value: 100
-    learnable: False
+  restock_threshold: 20  # Minimum stock before restocking
+  restock_quantity: 100  # Units to restock
   products:
-    name: "products"
-    value:  # List of products defined within the "value" key
-      - id: 1
-        name: "Product A"
-        price: 20
-        stock: 100
-        learnable: False
-      - id: 2
-        name: "Product B"
-        price: 15
-        stock: 150
-        learnable: False
-      - id: 3
-        name: "Product C"
-        price: 10
-        stock: 200
-        learnable: False
+    - id: 1
+      name: "Product A"
+      price: 20
+      stock: 100
+    - id: 2
+      name: "Product B"
+      price: 15
+      stock: 150
+    - id: 3
+      name: "Product C"
+      price: 10
+      stock: 200
 
 # Promotions Configuration
 promotions:
-  - id: 1
-    discount: 0.2
-    duration: 7
+  - id: 1          # Product ID for the promotion
+    discount: 0.2  # Discount rate (20%)
+    duration: 7    # Duration of the promotion in steps
   - id: 2
-    discount: 0.1
+    discount: 0.1  # Discount rate (10%)
     duration: 14
 
 # Consumers Configuration
 consumers:
-  count: 50
+  count: 50  # Number of consumers in the simulation
   budget_range:
-    name: "budget_range"
-    min: 50
-    max: 200
-    learnable: False
+    min: 50   # Minimum initial budget
+    max: 200  # Maximum initial budget
   price_sensitivity_range:
-    name: "price_sensitivity_range"
-    min: 0.5
-    max: 1.5
-    learnable: True
+    min: 0.5  # Minimum price sensitivity
+    max: 1.5  # Maximum price sensitivity
   purchase_frequency_range:
-    name: "purchase_frequency_range"
-    min: 2
-    max: 5
-    learnable: True
+    min: 2  # Minimum purchases per week
+    max: 5  # Maximum purchases per week
 
 # Substep Definitions
 substeps:
-  restock: observation
-  purchase: policy
-  deliver: transition
+  - type: observation
+    name: restock
+  - type: policy
+    name: purchase
+  - type: transition
+    name: deliver
+
 
 # State Configuration
 state:

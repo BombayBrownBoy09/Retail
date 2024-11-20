@@ -1,65 +1,116 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from models.retail_model import initialize_registry
+import yaml
+import numpy as np
 import argparse
 from tqdm import trange
-from agent_torch.core import Runner
-from agent_torch.core.helpers import read_config
-from models.retail_model import initialize_registry
+from agent_torch.core import Registry, Runner
+from agent_torch.core.helpers import read_config, read_from_file, grid_network
 
-print(":: execution started")
-
-# Parse command-line arguments
-parser = argparse.ArgumentParser()
-parser.add_argument("-c", "--config", help="Path to YAML config file", required=True)
-config_file = parser.parse_args().config
-
-# Load configuration
-config = read_config(config_file)
-
-# Dynamic conversion of environment properties to ensure compatibility
-environment = config["environment"]
-for key, value in environment.items():
-    if isinstance(value, list):  # Convert lists to dictionaries with name, value, learnable
-        config["environment"][key] = {
-            "name": key,
-            "value": value,
-            "learnable": False,
+def load_config(config_path):
+    """
+    Load configuration from config.yaml and format it for the runner.
+    """
+    with open(config_path, "r") as f:
+        config = yaml.safe_load(f)
+        # Format substeps as required by Runner
+        substeps = []
+        for substep_dict in config["substeps"]:
+            substep = {}
+            step_type = substep_dict['type']
+            step_name = substep_dict['name']
+            substep = {
+                step_name: {
+                    "active_agents": ["consumer"],  # Default agent type
+                    "type": step_type
+                }
+            }
+            substeps.append(substep)
+        config["substeps"] = substeps
+        # Ensure simulation metadata is properly formatted
+        if "simulation_metadata" not in config:
+            config["simulation_metadata"] = {}
+        config["simulation_metadata"]["num_substeps_per_step"] = len(substeps)
+        if "num_steps_per_episode" not in config["simulation_metadata"]:
+            config["simulation_metadata"]["num_steps_per_episode"] = config["simulation"]["steps"]
+        if "num_episodes" not in config["simulation_metadata"]:
+            config["simulation_metadata"]["num_episodes"] = 1
+        # Initialize agents state
+        agents = []
+        for i in range(config["consumers"]["count"]):
+            agent = {
+                "id": i,
+                "budget": np.random.uniform(
+                    config["consumers"]["budget_range"]["min"],
+                    config["consumers"]["budget_range"]["max"]
+                ),
+                "price_sensitivity": np.random.uniform(
+                    config["consumers"]["price_sensitivity_range"]["min"],
+                    config["consumers"]["price_sensitivity_range"]["max"]
+                ),
+                "purchase_frequency": np.random.randint(
+                    config["consumers"]["purchase_frequency_range"]["min"],
+                    config["consumers"]["purchase_frequency_range"]["max"]
+                )
+            }
+            agents.append(agent)
+        # Create initial state structure
+        initial_state = {
+            "agents": {
+                "name": "agents",
+                "value": agents
+            },
+            "environment": {
+                "properties": {
+                    "restock_threshold": {
+                        "name": "restock_threshold",
+                        "value": config["environment"]["restock_threshold"]
+                    },
+                    "restock_quantity": {
+                        "name": "restock_quantity",
+                        "value": config["environment"]["restock_quantity"]
+                    },
+                    "products": {
+                        "name": "products",
+                        "value": config["environment"]["products"]
+                    }
+                }
+            }
         }
-    elif not isinstance(value, dict):  # Wrap scalar values in a dictionary
-        config["environment"][key] = {
-            "name": key,
-            "value": value,
-            "learnable": False,
-        }
+        # Add promotions to state
+        for promo in config["promotions"]:
+            for product in initial_state["environment"]["properties"]["products"]["value"]:
+                if product["id"] == promo["id"]:
+                    product["promotion"] = 1 - promo["discount"]
+        # Add initial state to config
+        config["initial_state"] = initial_state
+        return config
 
-# Optional: Debugging output to verify conversion
-print(":: Converted environment configuration:")
-for key, value in config["environment"].items():
-    print(f"{key}: {value}")
 
-# Access simulation metadata
-simulation_metadata = config["simulation_metadata"]
-num_episodes = simulation_metadata["num_episodes"]
-num_steps_per_episode = simulation_metadata["num_steps_per_episode"]
+def parse_args():
+    parser = argparse.ArgumentParser(description='Run retail simulation')
+    parser.add_argument('-c', '--config', type=str, required=True,
+                      help='/Users/bhargav/random_projects/Retail/config.yaml')
+    return parser.parse_args()
 
-# Initialize registry and substeps
-registry, substeps = initialize_registry()
 
-# Optional: Debugging output
-print(":: Substeps returned by initialize_registry:")
-print(substeps)
+if __name__ == "__main__":
+    # Parse command line arguments
+    args = parse_args()
+    # Load and format configuration
+    config_data = load_config(args.config)
+    # Initialize registry
+    registry = Registry()
+    registry.register(read_from_file, "read_from_file", "initialization")
+    registry.register(grid_network, "grid", key="network")
+    # registry.register(map_network, "map", key="network")
+    # Initialize the runner
+    runner = Runner(config=config_data, registry=registry)
+    # Initialize the simulation
+    runner.init()
+    # Run the simulation
+    runner.step()
 
-# Initialize the runner
-runner = Runner(config, registry)
-runner.init()
-
-print(":: preparing simulation...")
-
-# Run the simulation
-for episode in range(num_episodes):
-    runner.reset()
-    print(f":: starting episode {episode + 1}")
-
-    for step in trange(num_steps_per_episode, desc=f":: running simulation {episode + 1}"):
-        runner.step(1)  # Advance the simulation by 1 step
-
-print(":: execution completed")
-
+    print("Simulation completed successfully!")
