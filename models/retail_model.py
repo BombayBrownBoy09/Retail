@@ -2,6 +2,7 @@ from agent_torch.core.substep import SubstepObservation, SubstepAction, SubstepT
 from agent_torch.core.registry import Registry
 
 
+@Registry.register_substep("Purchase", "policy")
 class Purchase(SubstepAction):
     def __init__(self, config=None, input_variables=None, output_variables=None, arguments=None):
         config = config or {"simulation_metadata": {"calibration": False}}
@@ -28,7 +29,7 @@ class Purchase(SubstepAction):
         state['actions'] = purchases
         return state
 
-
+@Registry.register_substep("Deliver", "transition")
 class Deliver(SubstepTransition):
     def __init__(self, config=None, input_variables=None, output_variables=None, arguments=None):
         config = config or {"simulation_metadata": {"calibration": False}}
@@ -51,7 +52,7 @@ class Deliver(SubstepTransition):
                         print(f"Delivering product {product_id}: stock after={prod['stock']}")
         return state
 
-
+@Registry.register_substep("Restock", "observation")
 class Restock(SubstepObservation):
     def __init__(self, config=None, input_variables=None, output_variables=None, arguments=None):
         config = config or {"simulation_metadata": {"calibration": False}}

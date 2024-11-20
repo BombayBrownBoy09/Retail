@@ -1,75 +1,128 @@
-# Simulation Configuration
-simulation:
-  steps: 10  # Number of steps to run the simulation
-
-# Simulation Metadata
 simulation_metadata:
-  num_steps_per_episode: 10
+  device: 'cpu'
   num_episodes: 1
-  num_substeps_per_step: 3  # Number of substeps in each simulation step
-  device: "cpu"  # Specify the device: "cpu" or "cuda" for GPU
-  visualize: False  # Optional: Include if the simulation has a visualization step
+  num_steps_per_episode: 50
+  num_substeps_per_step: 3
+  calibration: false
+  visualize: true
+  num_bap: 50  # Number of consumers
+  num_bpp: 0  # Not used in scripts
+  num_order: 99999
 
-# Environment Configuration
-environment:
-  restock_threshold: 20  # Minimum stock before restocking
-  restock_quantity: 100  # Units to restock
-  products:
-    - id: 1
-      name: "Product A"
-      price: 20
-      stock: 100
-    - id: 2
-      name: "Product B"
-      price: 15
-      stock: 150
-    - id: 3
-      name: "Product C"
-      price: 10
-      stock: 200
+state:
+  environment:
+    restock_threshold: 20  # Minimum stock before restocking
+    restock_quantity: 100  # Units to restock
+    products:
+      - id: 1
+        name: "Product A"
+        price: 20
+        stock: 10  # Reduced to trigger restocking
+      - id: 2
+        name: "Product B"
+        price: 15
+        stock: 5   # Reduced to trigger restocking
+      - id: 3
+        name: "Product C"
+        price: 10
+        stock: 50
+    last_order_id:
+      name: 'Last Created Order'
+      value: -1
 
-# Promotions Configuration
-promotions:
-  - id: 1          # Product ID for the promotion
-    discount: 0.2  # Discount rate (20%)
-    duration: 7    # Duration of the promotion in steps
-  - id: 2
-    discount: 0.1  # Discount rate (10%)
-    duration: 14
-
-# Consumers Configuration
-consumers:
-  count: 50  # Number of consumers in the simulation
-  budget_range:
-    min: 50   # Minimum initial budget
-    max: 200  # Maximum initial budget
-  price_sensitivity_range:
-    min: 0.5  # Minimum price sensitivity
-    max: 1.5  # Maximum price sensitivity
-  purchase_frequency_range:
-    min: 2  # Minimum purchases per week
-    max: 5  # Maximum purchases per week
+  agents:
+    bap:  # Consumers
+      number: 50
+      properties:
+        id:
+          name: "Consumer ID"
+          initialization_function:
+            generator: 'generate_ids'
+            arguments:
+              shape:
+                - 50
+                - 1
+        budget:
+          name: "Budget"
+          initialization_function:
+            generator: 'random_float'
+            arguments:
+              lower_limit: 50
+              upper_limit: 200
+        price_sensitivity:
+          name: "Price Sensitivity"
+          initialization_function:
+            generator: 'random_float'
+            arguments:
+              lower_limit: 0.5
+              upper_limit: 1.5
 
 # Substep Definitions
 substeps:
-  - type: observation
+  '0':  # Restock Step
+    type: observation
     name: restock
-  - type: policy
+    description: "Restock products when stock is below the threshold."
+    active_agents:
+      - environment
+    observation:
+      environment:
+        check_stock_levels:
+          generator: "Restock"
+          input_variables:
+            - "environment"
+          output_variables:
+            - "environment"
+
+  '1':  # Purchase Step
+    type: policy
     name: purchase
-  - type: transition
+    description: "Consumers decide what products to purchase."
+    active_agents:
+      - bap
+    policy:
+      consumer:
+        make_purchase_decision:
+          generator: "Purchase"
+          input_variables:
+            - "agents"
+            - "environment"
+          output_variables:
+            - "actions"
+
+  '2':  # Deliver Step
+    type: transition
     name: deliver
+    description: "Deliver products to consumers and update stock."
+    active_agents:
+      - environment
+    transition:
+      environment:
+        deliver_products:
+          generator: "Deliver"
+          input_variables:
+            - "environment"
+            - "actions"
+          output_variables:
+            - "environment"
 
+promotions:
+  - id: 1
+    discount: 0.2  # 20% off Product A
+    duration: 7
+  - id: 2
+    discount: 0.1  # 10% off Product B
+    duration: 14
 
-# State Configuration
-state:
-  agents:
-    consumer: 50
-  environment:
-    products:
-      - id: 1
-        stock: 100
-      - id: 2
-        stock: 150
-      - id: 3
-        stock: 200
-  time_step: 0
+consumers:
+  count: 50  # Replaced variable reference with actual value
+  budget_range:
+    min: 50
+    max: 200
+  price_sensitivity_range:
+    min: 0.5
+    max: 1.5
+  purchase_frequency_range:
+    min: 2
+    max: 5
+
