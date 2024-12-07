@@ -1,142 +1,150 @@
 simulation_metadata:
-  device: 'cpu'
+  device: "cpu"
   num_episodes: 1
   num_steps_per_episode: 50
   num_substeps_per_step: 3
   calibration: false
   visualize: true
-  num_bap: 50  # Number of consumers
-  num_bpp: 0  # Not used in scripts
-  num_order: 99999
+  num_consumers: 50
+
+metadata:
+  product_names:
+    name: "Product Names"
+    value: ["Product A", "Product B", "Product C"]
 
 state:
   environment:
     restock_threshold:
       name: "Restock Threshold"
-      value: 20  # Minimum stock before restocking
+      learnable: false
+      shape: 1
+      dtype: "float"
+      value: 20
+      initialization_function:
+        generator: "fixed_value"
+        arguments:
+          shape: 1
+          value: 20
     restock_quantity:
       name: "Restock Quantity"
-      value: 100  # Units to restock
-    products:
-      name: "Products"
-      value:
-        - id: 1
-          name: "Product A"
-          price: 20
-          stock: 10  # Reduced to trigger restocking
-        - id: 2
-          name: "Product B"
-          price: 15
-          stock: 5   # Reduced to trigger restocking
-        - id: 3
-          name: "Product C"
-          price: 10
-          stock: 50
-    last_order_id:
-      name: "Last Created Order"
-      value: -1
-
+      learnable: false  
+      shape: 1
+      dtype: "float"
+      value: 100
+      initialization_function:
+        generator: "fixed_value"
+        arguments:
+          shape: 1
+          value: 100
+    product_ids:
+      name: "Product IDs"
+      learnable: false
+      shape: 3
+      dtype: "int"
+      value: [1, 2, 3]
+      initialization_function:
+        generator: "fixed_value"
+        arguments:
+          shape: 3
+          value: [1, 2, 3]
+    product_prices:
+      name: "Product Prices"
+      learnable: false 
+      shape: 3
+      dtype: "float"
+      value: [20.0, 15.0, 10.0]
+      initialization_function:    
+        generator: "fixed_value"
+        arguments:
+          shape: 3
+          value: [20.0, 15.0, 10.0]
+    product_stocks:
+      name: "Product Stocks"
+      learnable: false 
+      shape: 3
+      dtype: "float"
+      value: [10.0, 5.0, 50.0]
+      initialization_function:
+        generator: "fixed_value"
+        arguments:
+          shape: 3
+          value: [10.0, 5.0, 50.0]
   agents:
-    bap:  # Consumers
+    bap:
       number: 50
       properties:
         id:
           name: "Consumer ID"
+          shape: [50, 1]
+          dtype: "int"
           initialization_function:
+            learnable: false
             generator: "generate_ids"
             arguments:
-              shape:
-                - 50
-                - 1
+              shape: [50, 1]
+              dtype: "int"
         budget:
           name: "Budget"
+          shape: [50, 1]
+          dtype: "float"
           initialization_function:
             generator: "random_float"
             arguments:
-              lower_limit:
-                name: "Lower Limit"
-                value: 50
-              upper_limit:
-                name: "Upper Limit"
-                value: 200
+              learnable: false
+              shape: [50, 1]
+              lower_limit: 50
+              upper_limit: 200
         price_sensitivity:
           name: "Price Sensitivity"
+          shape: [50, 1]
+          dtype: "float"
           initialization_function:
             generator: "random_float"
             arguments:
-              lower_limit:
-                name: "Lower Limit"
-                value: 0.5
-              upper_limit:
-                name: "Upper Limit"
-                value: 1.5
+              learnable: true
+              shape: [50, 1]
+              lower_limit: 0.5
+              upper_limit: 1.5
 
-# Substep Definitions
 substeps:
-  '0':  # Restock Step
-    type: observation
-    name: restock
-    description: "Restock products when stock is below the threshold."
-    active_agents:
-      - environment
+  "0":
+    name: "Restock"
+    description: "Restock products when stock is below threshold"
+    active_agents: ["environment"]
     observation:
       environment:
         check_stock_levels:
           generator: "Restock"
-          input_variables:
-            - "environment"
-          output_variables:
-            - "environment"
-
-  '1':  # Purchase Step
-    type: policy
-    name: purchase
-    description: "Consumers decide what products to purchase."
-    active_agents:
-      - bap
+          arguments:
+            shape: [1]
+            input_variables: ["environment"]
+            output_variables: ["environment"]
+    policy: {}
+    transition: {}
+  "1":
+    name: "Purchase"
+    description: "Consumers decide what products to purchase"
+    active_agents: ["bap"]
+    observation: {}
     policy:
-      consumer:
+      bap:
         make_purchase_decision:
           generator: "Purchase"
-          input_variables:
-            - "agents"
-            - "environment"
-          output_variables:
-            - "actions"
-
-  '2':  # Deliver Step
-    type: transition
-    name: deliver
-    description: "Deliver products to consumers and update stock."
-    active_agents:
-      - environment
+          arguments:
+            shape: [50, 1]
+            input_variables: ["agents", "environment"]
+            output_variables: ["actions"]
+    transition: {}
+  "2":
+    name: "Deliver"
+    description: "Deliver products to consumers and update stock"
+    active_agents: ["environment"]
+    observation: {}
+    policy: {}
     transition:
-      environment:
-        deliver_products:
-          generator: "Deliver"
-          input_variables:
-            - "environment"
-            - "actions"
-          output_variables:
-            - "environment"
-
-promotions:
-  - id: 1
-    discount: 0.2  # 20% off Product A
-    duration: 7
-  - id: 2
-    discount: 0.1  # 10% off Product B
-    duration: 14
-
-consumers:
-  count: 50  # Replaced variable reference with actual value
-  budget_range:
-    min: 50
-    max: 200
-  price_sensitivity_range:
-    min: 0.5
-    max: 1.5
-  purchase_frequency_range:
-    min: 2
-    max: 5
-
+      deliver_products:
+        generator: "Deliver"
+        arguments:
+          shape: 3
+          input_variables: ["environment", "actions"]
+          output_variables: ["environment"]
