@@ -17,60 +17,36 @@ state:
     restock_threshold:
       name: "Restock Threshold"
       learnable: false
-      shape: 1
+      shape: [1]
       dtype: "float"
       value: 20
-      initialization_function:
-        generator: "fixed_value"
-        arguments:
-          shape: 1
-          value: 20
     restock_quantity:
       name: "Restock Quantity"
       learnable: false  
-      shape: 1
+      shape: [1]
       dtype: "float"
       value: 100
-      initialization_function:
-        generator: "fixed_value"
-        arguments:
-          shape: 1
-          value: 100
     product_ids:
       name: "Product IDs"
       learnable: false
-      shape: 3
+      shape: [3]
       dtype: "int"
       value: [1, 2, 3]
-      initialization_function:
-        generator: "fixed_value"
-        arguments:
-          shape: 3
-          value: [1, 2, 3]
     product_prices:
       name: "Product Prices"
       learnable: false 
-      shape: 3
+      shape: [3]
       dtype: "float"
       value: [20.0, 15.0, 10.0]
-      initialization_function:    
-        generator: "fixed_value"
-        arguments:
-          shape: 3
-          value: [20.0, 15.0, 10.0]
     product_stocks:
       name: "Product Stocks"
       learnable: false 
-      shape: 3
+      shape: [3]
       dtype: "float"
       value: [10.0, 5.0, 50.0]
-      initialization_function:
-        generator: "fixed_value"
-        arguments:
-          shape: 3
-          value: [10.0, 5.0, 50.0]
+
   agents:
-    bap:
+    bap:  # Consumers
       number: 50
       properties:
         id:
@@ -105,46 +81,121 @@ state:
               shape: [50, 1]
               lower_limit: 0.5
               upper_limit: 1.5
+    bpp:  # Store
+      number: 1
+      properties:
+        id:
+          name: "Store ID"
+          shape: [1, 1]
+          dtype: "int"
+          initialization_function:
+            learnable: false
+            generator: "generate_ids"
+            arguments:
+              shape: [1, 1]
+              dtype: "int"
 
 substeps:
   "0":
     name: "Restock"
-    description: "Restock products when stock is below threshold"
-    active_agents: ["environment"]
+    description: "Restock products when stock levels fall below the predefined threshold."
+    active_agents:
+      - "bpp"
     observation:
-      environment:
+      bpp:
         check_stock_levels:
-          generator: "Restock"
+          generator: "CheckStockLevels"
           arguments:
-            shape: [1]
-            input_variables: ["environment"]
-            output_variables: ["environment"]
-    policy: {}
-    transition: {}
+            threshold: "@env:restock_threshold"
+          input_variables:
+            stock_levels: "environment/product_stocks"
+            product_list: "environment/product_ids"
+          output_variables:
+            - stock_below_threshold  # ephemeral variable in this substep
+    policy:
+      bpp:
+        determine_restock_quantity:
+          generator: "DetermineRestockQuantity"
+          arguments: null
+          input_variables:
+            stock_below_threshold: "substep/stock_below_threshold"
+            restock_capacity: "environment/restock_quantity"
+          output_variables:
+            - restock_quantity  # ephemeral variable in this substep
+    transition:
+      update_stock_levels:
+        generator: "UpdateStockLevels"
+        arguments: null
+        input_variables:
+          restock_quantity: "substep/restock_quantity"
+          stock_levels: "environment/product_stocks"
+        output_variables:
+          - product_stocks  # updates environment/product_stocks
+
   "1":
     name: "Purchase"
-    description: "Consumers decide what products to purchase"
+    description: "Consumers decide which products to purchase."
     active_agents: ["bap"]
-    observation: {}
+    observation:
+      bap:
+        get_environment_info:
+          generator: "GetEnvironmentInfo"
+          arguments: null
+          input_variables:
+            product_stocks: "environment/product_stocks"
+            product_prices: "environment/product_prices"
+          output_variables:
+            - consumer_observation
     policy:
       bap:
         make_purchase_decision:
           generator: "Purchase"
           arguments:
             shape: [50, 1]
-            input_variables: ["agents", "environment"]
-            output_variables: ["actions"]
-    transition: {}
+          input_variables:
+            environment: "environment"
+          output_variables:
+            - purchase_actions
+    transition:
+      finalize_purchases:
+        generator: "FinalizePurchases"
+        arguments: null
+        input_variables:
+          purchase_actions: "substep/purchase_actions"
+        output_variables:
+          - final_purchase_actions
+
   "2":
     name: "Deliver"
-    description: "Deliver products to consumers and update stock"
-    active_agents: ["environment"]
-    observation: {}
-    policy: {}
+    description: "Deliver products to consumers and update stock if needed."
+    active_agents:
+      - "bpp"
+    observation:
+      bpp:
+        gather_delivery_info:
+          generator: "GatherDeliveryInfo"
+          arguments: null
+          input_variables:
+            environment: "environment"
+            actions: "substep/final_purchase_actions"
+          output_variables:
+            - delivery_info
+    policy:
+      bpp:
+        decide_delivery_plan:
+          generator: "DecideDeliveryPlan"
+          arguments: null
+          input_variables:
+            delivery_info: "substep/delivery_info"
+          output_variables:
+            - delivery_plan
     transition:
       deliver_products:
         generator: "Deliver"
         arguments:
           shape: 3
-          input_variables: ["environment", "actions"]
-          output_variables: ["environment"]
+        input_variables:
+          environment: "environment"
+          delivery_plan: "substep/delivery_plan"
+        output_variables:
+          - environment

@@ -1,7 +1,7 @@
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from models.retail_model import initialize_registry
+from models.main import initialize_registry
 from models.map import map_network
 import yaml
 import numpy as np
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     registry.register(grid_network, "grid", key="network")
     registry.register(map_network, "map", key="network")
 
-    # Initialize the runner
+    # Initialize the runner 
     runner = Runner(config=config_data, registry=registry)
     
     try:
